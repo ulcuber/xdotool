@@ -22,7 +22,7 @@ static int _xdo_match_window_name(const xdo_t *xdo, Window window, regex_t *re);
 static int _xdo_match_window_title(const xdo_t *xdo, Window window, regex_t *re);
 static int _xdo_match_window_pid(const xdo_t *xdo, Window window, int pid);
 static int _xdo_is_window_visible(const xdo_t *xdo, Window wid);
-static void find_matching_windows(const xdo_t *xdo, Window window, 
+static void find_matching_windows(const xdo_t *xdo, Window window,
                                   const xdo_search_t *search,
                                   Window **windowlist_ret,
                                   unsigned int *nwindows_ret,
@@ -67,15 +67,16 @@ int xdo_search_windows(const xdo_t *xdo, const xdo_search_t *search,
     }
   }
 
-  //printf("Window count: %d\n", (int)ncandidate_windows);
-  //printf("Search:\n");
-  //printf("onlyvisible: %d\n", search->only_visible);
-  //printf("pid: %lu\n", search->pid);
-  //printf("title: %s\n", search->title);
-  //printf("name: %s\n", search->winname);
-  //printf("class: %s\n", search->winclass);
-  //printf("classname: %s\n", search->winclassname);
-  //printf("//Search\n");
+  // printf("Window count: %u\n", *nwindows_ret);
+  // printf("Search:\n");
+  // printf("onlyvisible: %ld\n", search->searchmask & SEARCH_ONLYVISIBLE);
+  // printf("pid: %d\n", search->pid);
+  // printf("title: %s\n", search->title);
+  // printf("name: %s\n", search->winname);
+  // printf("role: %s\n", search->winrole);
+  // printf("class: %s\n", search->winclass);
+  // printf("classname: %s\n", search->winclassname);
+  // printf("//Search\n");
 
   return XDO_SUCCESS;
 } /* int xdo_search_windows */
@@ -279,7 +280,7 @@ static int check_window_match(const xdo_t *xdo, Window wid,
     if (desktop_want) {
       long desktop = -1;
 
-      /* We're modifying xdo here, but since we restore it, we're still 
+      /* We're modifying xdo here, but since we restore it, we're still
        * obeying the "const" contract. */
       int old_quiet = xdo->quiet;
       xdo_t *xdo2 = (xdo_t *)xdo;
@@ -292,16 +293,16 @@ static int check_window_match(const xdo_t *xdo, Window wid,
       desktop_ok = (ret == XDO_SUCCESS && desktop == search->desktop);
     }
 
-    /* Visibility is a hard condition, fail always if we wanted 
+    /* Visibility is a hard condition, fail always if we wanted
      * only visible windows and this one isn't */
     if (visible_want && !_xdo_is_window_visible(xdo, wid)) {
-      if (debug) fprintf(stderr, "skip %ld visible\n", wid); 
+      if (debug) fprintf(stderr, "skip %ld visible\n", wid);
       visible_ok = False;
       break;
     }
 
     if (pid_want && !_xdo_match_window_pid(xdo, wid, search->pid)) {
-      if (debug) fprintf(stderr, "skip %ld pid\n", wid); 
+      if (debug) fprintf(stderr, "skip %ld pid\n", wid);
       pid_ok = False;
     }
 
@@ -356,8 +357,8 @@ static int check_window_match(const xdo_t *xdo, Window wid,
                          && desktop_ok;
       break;
   }
-  
-  fprintf(stderr, 
+
+  fprintf(stderr,
           "Unexpected code reached. search->require is not valid? (%d); "
           "this may be a bug?\n",
           search->require);
@@ -385,7 +386,7 @@ static int ignore_badwindow(Display *dpy, XErrorEvent *xerr) {
   exit(1);
 }
 
-static void find_matching_windows(const xdo_t *xdo, Window window, 
+static void find_matching_windows(const xdo_t *xdo, Window window,
                                   const xdo_search_t *search,
                                   Window **windowlist_ret,
                                   unsigned int *nwindows_ret,
@@ -443,7 +444,7 @@ static void find_matching_windows(const xdo_t *xdo, Window window,
 
     if (*windowlist_size == *nwindows_ret) {
       *windowlist_size *= 2;
-      *windowlist_ret = realloc(*windowlist_ret, 
+      *windowlist_ret = realloc(*windowlist_ret,
                                 *windowlist_size * sizeof(Window));
     }
   } /* for (i in children) ... */

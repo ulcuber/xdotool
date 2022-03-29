@@ -1,7 +1,11 @@
+/.vscode
+/.idea
+
 *.o
 *.so*
 *.1
 libxdo.pc
 xdotool
+xdotool.static
 deb-build
 *.deb

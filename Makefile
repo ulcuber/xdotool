@@ -51,7 +51,8 @@ CMDOBJS= cmd_click.o cmd_mousemove.o cmd_mousemove_relative.o cmd_mousedown.o \
          cmd_set_desktop_for_window.o cmd_get_desktop_for_window.o \
          cmd_get_desktop_viewport.o cmd_set_desktop_viewport.o \
          cmd_windowkill.o cmd_behave.o cmd_window_select.o \
-         cmd_getwindowname.o cmd_getwindowclassname.o cmd_behave_screen_edge.o \
+         cmd_getwindowname.o cmd_getwindowrole.o \
+		 cmd_getwindowclass.o cmd_getwindowclassname.o cmd_behave_screen_edge.o \
          cmd_windowminimize.o cmd_exec.o cmd_getwindowgeometry.o \
          cmd_windowclose.o cmd_windowquit.o \
          cmd_sleep.o cmd_get_display_geometry.o
@@ -115,7 +116,7 @@ installman: xdotool.1
 deinstall: uninstall
 
 .PHONY: uninstall
-uninstall: 
+uninstall:
 	rm -f $(DINSTALLBIN)/xdotool
 	rm -f $(DINSTALLMAN)/xdotool.1
 	rm -f $(DINSTALLLIB)/libxdo.$(LIBSUFFIX)
@@ -161,7 +162,7 @@ ifneq ($(WITHOUT_RPATH_FIX),1)
 xdotool: LDFLAGS+=-rpath $(INSTALLLIB)
 endif
 xdotool: xdotool.o $(CMDOBJS) libxdo.$(LIBSUFFIX)
-	$(CC) -o $@ xdotool.o $(CMDOBJS) -L. -lxdo $(LDFLAGS)  -lm $(XDOTOOL_LIBS)
+	$(CC) -o $@ xdotool.o $(CMDOBJS) -L . -lxdo $(LDFLAGS) -lm $(XDOTOOL_LIBS)
 
 xdotool.1: xdotool.pod
 	pod2man -c "" -r "" xdotool.pod > $@
@@ -262,13 +263,13 @@ $(DEBDIR)/%/control: $(DEBDIR)/%/
 	sed -e 's/%VERSION%/$(VERSION)/g; s/%MAJOR%/$(MAJOR)/' \
 		ext/debian/$(shell echo $* | tr -d 0-9).control > $@
 
-# Generate the 'md5sums' file 
-$(DEBDIR)/%/md5sums: $(DEBDIR)/%/ $(DEBDIR)/%/data.tar.gz 
+# Generate the 'md5sums' file
+$(DEBDIR)/%/md5sums: $(DEBDIR)/%/ $(DEBDIR)/%/data.tar.gz
 	tar -ztf $(DEBDIR)/$*/data.tar.gz | (cd $(DEBDIR); xargs md5sum || true) > $@
 
 # Generate the 'control.tar.gz'
 $(DEBDIR)/%/control.tar.gz: $(DEBDIR)/%/control $(DEBDIR)/%/md5sums
-	tar -C $(DEBDIR)/$* -zcf $(DEBDIR)/$*/control.tar.gz control md5sums 
+	tar -C $(DEBDIR)/$* -zcf $(DEBDIR)/$*/control.tar.gz control md5sums
 
 # Build a tarball for xdotool files
 $(DEBDIR)/xdotool/data.tar.gz: $(DEBDIR)/xdotool

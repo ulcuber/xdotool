@@ -207,6 +207,8 @@ struct dispatch {
   { "getactivewindow", cmd_getactivewindow, },
   { "getwindowfocus", cmd_getwindowfocus, },
   { "getwindowname", cmd_getwindowname, },
+  { "getwindowrole", cmd_getwindowrole, },
+  { "getwindowclass", cmd_getwindowclass},
   { "getwindowclassname", cmd_getwindowclassname},
   { "getwindowpid", cmd_getwindowpid, },
   { "getwindowgeometry", cmd_getwindowgeometry, },
@@ -289,7 +291,7 @@ int xdotool_main(int argc, char **argv) {
     stat_ret = stat(argv[1], &data);
     int i = 0;
     int argv1_is_command= 0;
-    
+
     for (i = 0; dispatch[i].name != NULL; i++) {
       if (!strcasecmp(dispatch[i].name, argv[1])) {
         argv1_is_command = 1;
@@ -573,7 +575,7 @@ int args_main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
   }
-  
+
   context_t context;
   context.xdo = xdo_new(NULL);
   context.prog = *argv;

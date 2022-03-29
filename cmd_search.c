@@ -24,11 +24,11 @@ int cmd_search(context_t *context) {
   struct option longopts[] = {
     { "all", no_argument, NULL, opt_all },
     { "any", no_argument, NULL, opt_any },
-    { "class", no_argument, NULL, opt_class },
-    { "classname", no_argument, NULL, opt_classname },
+    { "class", required_argument, NULL, opt_class },
+    { "classname", required_argument, NULL, opt_classname },
     { "help", no_argument, NULL, opt_help },
     { "maxdepth", required_argument, NULL, opt_maxdepth },
-    { "name", no_argument, NULL, opt_name },
+    { "name", required_argument, NULL, opt_name },
     { "shell", no_argument, NULL, opt_shell },
     { "prefix", required_argument, NULL, opt_prefix },
     { "onlyvisible", 0, NULL, opt_onlyvisible },
@@ -38,34 +38,34 @@ int cmd_search(context_t *context) {
     { "desktop", required_argument, NULL, opt_desktop },
     { "limit", required_argument, NULL, opt_limit },
     { "sync", no_argument, NULL, opt_sync },
-    { "role", no_argument, NULL, opt_role },
+    { "role", required_argument, NULL, opt_role },
     { 0, 0, 0, 0 },
   };
   static const char *usage =
       "Usage: xdotool %s "
-      "[options] regexp_pattern\n"
-      "--class         check regexp_pattern against the window class\n"
-      "--classname     check regexp_pattern against the window classname\n"
-      "--role          check regexp_pattern against the window role\n"
-      "--maxdepth N    set search depth to N. Default is infinite.\n"
-      "                -1 also means infinite.\n"
-      "--onlyvisible   matches only windows currently visible\n"
-      "--pid PID       only show windows belonging to specific process\n"
-      "                Not supported by all X11 applications\n"
-      "--screen N      only search a specific screen. Default is all screens\n"
-      "--desktop N     only search a specific desktop number\n"
-      "--limit N       break search after N results\n"
-      "--name          check regexp_pattern against the window name\n"
-      "--shell         print results as shell array WINDOWS=( ... )\n"
-      "--prefix STR    use prefix (max 16 chars) for array name STRWINDOWS\n"
-      "--title         DEPRECATED. Same as --name.\n"
-      "--all           Require all conditions match a window. Default is --any\n"
-      "--any           Windows matching any condition will be reported\n"
-      "--sync          Wait until a search result is found.\n"
-      "-h, --help      show this help output\n"
+      "[options] [regexp_pattern]\n"
+      "--class     regex  check regex (POSIX extended) against the window class\n"
+      "--classname regex  check regex (POSIX extended) against the window classname\n"
+      "--role      regex  check regex (POSIX extended) against the window role\n"
+      "--maxdepth N       set search depth to N. Default is infinite.\n"
+      "                   -1 also means infinite.\n"
+      "--onlyvisible      matches only windows currently visible\n"
+      "--pid PID          only show windows belonging to specific process\n"
+      "                   Not supported by all X11 applications\n"
+      "--screen N         only search a specific screen. Default is all screens\n"
+      "--desktop N        only search a specific desktop number\n"
+      "--limit N          break search after N results\n"
+      "--name regex       check regex (POSIX extended) against the window name\n"
+      "--shell            print results as shell array WINDOWS=( ... )\n"
+      "--prefix STR       use prefix (max 16 chars) for array name STRWINDOWS\n"
+      "--title            DEPRECATED. Same as --name.\n"
+      "--all              Require all conditions match a window. Default is --any\n"
+      "--any              Windows matching any condition will be reported\n"
+      "--sync             Wait until a search result is found.\n"
+      "-h, --help         show this help output\n"
       "\n"
       "If none of --name, --classname, --class, or --role are specified, the \n"
-      "defaults are: --name --classname --class --role\n";
+      "defaults are: --name regexp_pattern --classname regexp_pattern --class regexp_pattern --role regexp_pattern\n";
 
   memset(&search, 0, sizeof(xdo_search_t));
   search.max_depth = -1;
@@ -73,6 +73,7 @@ int cmd_search(context_t *context) {
 
   char *cmd = *context->argv;
   int option_index;
+  int optional_arg = 0;
 
   while ((c = getopt_long_only(context->argc, context->argv, "+h",
                                longopts, &option_index)) != -1) {
@@ -102,17 +103,25 @@ int cmd_search(context_t *context) {
         search.searchmask |= SEARCH_SCREEN;
         break;
       case opt_onlyvisible:
-        search.only_visible = True;
         search.searchmask |= SEARCH_ONLYVISIBLE;
         break;
       case opt_class:
         search_class = True;
+        search.searchmask |= SEARCH_CLASS;
+        search.winclass = optarg;
+        optional_arg = 1;
         break;
       case opt_classname:
         search_classname = True;
+        search.searchmask |= SEARCH_CLASSNAME;
+        search.winclassname = optarg;
+        optional_arg = 1;
         break;
       case opt_role:
         search_role = True;
+        search.searchmask |= SEARCH_ROLE;
+        search.winrole = optarg;
+        optional_arg = 1;
         break;
       case opt_title:
         fprintf(stderr, "This flag is deprecated. Assuming you mean --name (the"
@@ -120,6 +129,9 @@ int cmd_search(context_t *context) {
         /* fall through */
       case opt_name:
         search_name = True;
+        search.searchmask |= SEARCH_NAME;
+        search.winname = optarg;
+        optional_arg = 1;
         break;
       case opt_shell:
         out_shell = True;
@@ -145,7 +157,7 @@ int cmd_search(context_t *context) {
     }
   }
 
-  consume_args(context, optind);
+  consume_args(context, optind - optional_arg);
 
   /* We require a pattern or a pid to search for */
   if (context->argc < 1 && search.pid == 0) {
@@ -160,30 +172,9 @@ int cmd_search(context_t *context) {
         "Defaulting to search window name, class, classname, and role\n");
       search.searchmask |= (SEARCH_NAME | SEARCH_CLASS | SEARCH_CLASSNAME
         | SEARCH_ROLE);
-      search_name = 1;
-      search_class = 1;
-      search_classname = 1;
-      search_role = 1;
-    }
-
-    if (search_title) {
-      search.searchmask |= SEARCH_NAME;
       search.winname = context->argv[0];
-    }
-    if (search_name) {
-      search.searchmask |= SEARCH_NAME;
-      search.winname = context->argv[0];
-    }
-    if (search_class) {
-      search.searchmask |= SEARCH_CLASS;
       search.winclass = context->argv[0];
-    }
-    if (search_classname) {
-      search.searchmask |= SEARCH_CLASSNAME;
       search.winclassname = context->argv[0];
-    }
-    if (search_role) {
-      search.searchmask |= SEARCH_ROLE;
       search.winrole = context->argv[0];
     }
     consume_args(context, 1);
@@ -216,7 +207,7 @@ int cmd_search(context_t *context) {
   context->windows = list;
   context->nwindows = nwindows;
 
-  /* error if number of windows found is zero (behave like grep) 
+  /* error if number of windows found is zero (behave like grep)
   but return success when being used inside eval (--shell option)*/
   return (nwindows || out_shell ? EXIT_SUCCESS : EXIT_FAILURE);
 }
